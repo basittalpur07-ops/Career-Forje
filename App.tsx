@@ -58,7 +58,7 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 fixed top-0 left-0 w-full z-40 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-20">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-100">C</div>
+            <img src="logo.png" alt="Career Forge Logo" className="w-10 h-10 rounded-xl shadow-lg shadow-indigo-100 object-contain" />
             <h1 className="text-xl font-black text-slate-900 tracking-tight hidden md:block uppercase">Dashboard</h1>
           </div>
           

@@ -25,7 +25,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView, isLoggedIn, user,
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => setView('landing')}
         >
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-sm">C</div>
+          <img src="logo.png" alt="Career Forge Logo" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-black text-white tracking-tighter text-lg hidden sm:block uppercase">Career Forge</span>
         </div>
 
