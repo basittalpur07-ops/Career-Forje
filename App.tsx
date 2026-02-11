@@ -46,6 +46,13 @@ const App: React.FC = () => {
     setView('landing');
   };
 
+  const getInitial = () => {
+    if (!user) return '?';
+    if (user.displayName) return user.displayName[0].toUpperCase();
+    if (user.email) return user.email[0].toUpperCase();
+    return 'U';
+  };
+
   const renderDashboard = () => (
     <div className="min-h-screen bg-slate-50 flex flex-col pt-24">
       <header className="bg-white border-b border-slate-200 fixed top-0 left-0 w-full z-40 no-print">
@@ -55,8 +62,8 @@ const App: React.FC = () => {
             <h1 className="text-xl font-black text-slate-900 tracking-tight hidden md:block uppercase">Dashboard</h1>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-100 p-1 rounded-xl flex">
+          <div className="flex items-center gap-4">
+            <div className="bg-slate-100 p-1 rounded-xl flex hidden xl:flex">
               {['editor', 'preview', 'ats', 'letters', 'architect'].map((v: any) => (
                 <button 
                   key={v}
@@ -69,12 +76,33 @@ const App: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button 
-              onClick={handleDownloadPDF}
-              className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-black text-xs shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2"
-            >
-              DOWNLOAD
-            </button>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleDownloadPDF}
+                className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-black text-xs shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2"
+              >
+                DOWNLOAD
+              </button>
+
+              <div className="relative group">
+                <button 
+                  onClick={handleLogout}
+                  className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-200 flex items-center justify-center text-white font-black text-sm shadow-md hover:scale-105 transition-transform"
+                >
+                  {getInitial()}
+                </button>
+                <div className="absolute right-0 top-full mt-2 hidden group-hover:block w-48 bg-white border border-slate-200 rounded-xl p-3 shadow-2xl animate-in fade-in slide-in-from-top-2">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2 px-1 truncate">{user?.email}</p>
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 text-xs font-bold text-rose-500 hover:bg-slate-50 rounded-lg transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -118,6 +146,7 @@ const App: React.FC = () => {
         currentView={view} 
         setView={setView} 
         isLoggedIn={!!user} 
+        user={user}
         onAuthClick={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
       />
