@@ -10,7 +10,7 @@ const ContactPage: React.FC = () => {
     const data = new FormData(form);
     
     // Note: Replace "YOUR_FORMSPREE_ID" with your actual Formspree endpoint ID
-    const response = await fetch("https://formspree.io/f/YOUR_FORMSPREE_ID", {
+    const response = await fetch("https://formspree.io/f/mqedeyrd", {
       method: "POST",
       body: data,
       headers: { 'Accept': 'application/json' }
