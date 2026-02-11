@@ -2,8 +2,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ResumeData } from "../types";
 
+// Always use the direct process.env.API_KEY as per guidelines
 const getAIClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const optimizeExperienceDescription = async (text: string): Promise<string> => {
@@ -15,7 +16,7 @@ export const optimizeExperienceDescription = async (text: string): Promise<strin
       
       Original: ${text}`,
     });
-    return response.text?.trim() || text;
+    return response.text || text;
   } catch (error) {
     console.error("Gemini Error:", error);
     return text;
@@ -84,7 +85,7 @@ export const generateLetter = async (resumeData: ResumeData, jobDescription: str
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text?.trim() || "";
+    return response.text || "";
   } catch (error) {
     console.error("Letter Error:", error);
     return "Failed to generate letter.";
@@ -102,7 +103,7 @@ export const getAIAssistantResponse = async (query: string, history: any[]) => {
         { text: query }
       ]
     });
-    return response.text?.trim() || "I'm sorry, I couldn't process that.";
+    return response.text || "I'm sorry, I couldn't process that.";
   } catch (error) {
     console.error("Assistant Error:", error);
     return "Something went wrong.";
@@ -123,7 +124,7 @@ export const generateProfessionalSummary = async (data: Partial<ResumeData>): Pr
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text?.trim() || "";
+    return response.text || "";
   } catch (error) {
     console.error("Gemini Error:", error);
     return "";

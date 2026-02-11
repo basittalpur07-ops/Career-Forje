@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface LandingPageProps {
   onStart: () => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
+  const [logoError, setLogoError] = useState(false);
   const avatars = [
     "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80",
     "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80",
@@ -24,7 +25,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
       <header className="relative z-10 max-w-7xl mx-auto px-6 pt-48 pb-40 text-center lg:text-left grid lg:grid-cols-2 gap-20 items-center">
         <div className="space-y-10">
           <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/5 border border-white/10 rounded-full shadow-2xl backdrop-blur-md">
-            <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+            {!logoError ? (
+              <img 
+                src="./logo.png" 
+                alt="Logo" 
+                className="w-5 h-5 object-contain" 
+                onError={() => setLogoError(true)} 
+              />
+            ) : (
+              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+            )}
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Next Gen Career Architect</span>
           </div>
           

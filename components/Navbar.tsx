@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface NavbarProps {
   currentView: string;
@@ -11,6 +11,8 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ currentView, setView, isLoggedIn, user, onAuthClick, onLogout }) => {
+  const [imgError, setImgError] = useState(false);
+
   const getInitial = () => {
     if (!user) return '?';
     if (user.displayName) return user.displayName[0].toUpperCase();
@@ -25,8 +27,21 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView, isLoggedIn, user,
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => setView('landing')}
         >
-          <img src="logo.png" alt="Career Forge Logo" className="w-8 h-8 rounded-lg object-contain" />
-          <span className="font-black text-white tracking-tighter text-lg hidden sm:block uppercase">Career Forge</span>
+          <div className="relative w-9 h-9 flex items-center justify-center">
+            {!imgError ? (
+              <img 
+                src="logo.png" 
+                alt="Career Forge" 
+                className="w-full h-full rounded-xl object-contain bg-white/5 p-1.5 transition-opacity duration-300"
+                onError={() => setImgError(true)} 
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg">
+                C
+              </div>
+            )}
+          </div>
+          <span className="font-black text-white tracking-tighter text-xl hidden sm:block uppercase">Career Forge</span>
         </div>
 
         <div className="hidden md:flex gap-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">

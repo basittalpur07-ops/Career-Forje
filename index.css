@@ -1,0 +1,23 @@
+
+/* Career Forge - Base Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #4f46e5;
+  --brand-dark: #0a0c10;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure print layouts are clean */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

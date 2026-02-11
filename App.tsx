@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('landing');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     const unsubscribe = authService.onAuthState((u) => {
@@ -57,8 +58,21 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col pt-24">
       <header className="bg-white border-b border-slate-200 fixed top-0 left-0 w-full z-40 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-20">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
-            <img src="logo.png" alt="Career Forge Logo" className="w-10 h-10 rounded-xl shadow-lg shadow-indigo-100 object-contain" />
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('landing')}>
+            <div className="relative w-10 h-10">
+              {!logoError ? (
+                <img 
+                  src="logo.png" 
+                  alt="Career Forge" 
+                  className="w-full h-full rounded-xl shadow-lg shadow-indigo-100 object-contain p-1 border border-slate-100 bg-white" 
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-100">
+                  C
+                </div>
+              )}
+            </div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight hidden md:block uppercase">Dashboard</h1>
           </div>
           
