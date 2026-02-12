@@ -22,11 +22,15 @@ const AIAssistant: React.FC = () => {
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
 
-    const history = messages.map(m => ({ text: m.text }));
-    const response = await getAIAssistantResponse(userMsg, history);
-    
-    setMessages(prev => [...prev, { role: 'model', text: response }]);
-    setIsLoading(false);
+    try {
+      const history = messages.map(m => ({ text: m.text }));
+      const response = await getAIAssistantResponse(userMsg, history);
+      setMessages(prev => [...prev, { role: 'model', text: response }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'model', text: "I'm having trouble connecting to my brain right now. Please check your API key or connection." }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,7 +47,7 @@ const AIAssistant: React.FC = () => {
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
+                <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
                   m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-700 shadow-sm'
                 }`}>
                   {m.text}
@@ -70,7 +74,7 @@ const AIAssistant: React.FC = () => {
               placeholder="Ask for career tips..."
               className="flex-1 text-sm p-2 bg-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
             />
-            <button onClick={handleSend} className="bg-indigo-600 text-white p-2 rounded-xl">
+            <button onClick={handleSend} className="bg-indigo-600 text-white p-2 rounded-xl active:scale-95 transition-transform">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
               </svg>
