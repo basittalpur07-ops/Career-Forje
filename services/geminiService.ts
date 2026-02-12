@@ -2,145 +2,164 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ResumeData } from "../types";
 
+// Configuration for all available engines.
+// Strictly using process.env.API_KEY for Gemini as per guidelines.
+const AI_ENGINES = [
+  { name: 'Gemini Primary', provider: 'gemini', key: process.env.API_KEY },
+  { name: 'Groq Primary', provider: 'groq', key: process.env.GROQ_KEY_1, model: 'llama-3.3-70b-versatile' },
+  { name: 'OpenRouter Primary', provider: 'openrouter', key: process.env.OPENROUTER_KEY_1, model: 'google/gemini-2.0-flash-exp:free' },
+];
+
 /**
- * Helper to call Gemini models using the standardized SDK approach.
+ * Universal call function with failover logic.
+ * Updated to support optional file parts for document analysis.
  */
-async function callGemini(
-  promptParts: any[], 
+async function callMultiAi(
+  prompt: string, 
   isJson: boolean = false, 
-  schema?: any, 
-  modelName: string = 'gemini-3-flash-preview',
-  systemInstruction: string = "You are a professional career assistant. Provide clear, plain text responses without any markdown formatting like asterisks, bolding, or headings."
+  systemInstruction: string = "You are a professional career assistant. Provide plain text responses without any markdown, asterisks, or headings.",
+  file?: { data: string, mimeType: string }
 ): Promise<string> {
-  try {
-    if (!process.env.API_KEY) {
-      throw new Error("API_KEY is missing from environment variables.");
-    }
+  let lastError = null;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: { parts: promptParts },
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: isJson ? 'application/json' : 'text/plain',
-        ...(isJson && schema ? { responseSchema: schema } : {})
+  for (const engine of AI_ENGINES) {
+    if (!engine.key) continue;
+
+    try {
+      console.log(`Attempting with: ${engine.name}...`);
+      
+      if (engine.provider === 'gemini') {
+        // Initializing with named parameter apiKey from process.env.API_KEY.
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+        
+        // Using recommended models based on task complexity.
+        // Document analysis and JSON tasks use gemini-3-pro-preview.
+        const modelName = (isJson || file) ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+        
+        const parts: any[] = [{ text: prompt }];
+        if (file) {
+          parts.push({
+            inlineData: {
+              data: file.data,
+              mimeType: file.mimeType
+            }
+          });
+        }
+
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: { parts },
+          config: {
+            systemInstruction: systemInstruction,
+            responseMimeType: isJson ? 'application/json' : 'text/plain',
+          }
+        });
+        
+        // Accessing text property directly (not as a function).
+        if (response.text) return response.text.replace(/[*#_~`]/g, '').trim();
+      } 
+      
+      else if (engine.provider === 'groq' || engine.provider === 'openrouter') {
+        const url = engine.provider === 'groq' 
+          ? 'https://api.groq.com/openai/v1/chat/completions' 
+          : 'https://openrouter.ai/api/v1/chat/completions';
+          
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${engine.key}`,
+            'Content-Type': 'application/json',
+            ...(engine.provider === 'openrouter' ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'Career Forge' } : {})
+          },
+          body: JSON.stringify({
+            model: engine.model,
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: prompt }
+            ],
+            response_format: isJson ? { type: 'json_object' } : undefined
+          })
+        });
+
+        const data = await response.json();
+        if (data.choices?.[0]?.message?.content) {
+          return data.choices[0].message.content.replace(/[*#_~`]/g, '').trim();
+        }
       }
-    });
-
-    if (!response.text) {
-      throw new Error("Empty response from AI");
+    } catch (e) {
+      console.warn(`${engine.name} failed:`, e);
+      lastError = e;
     }
-
-    // Clean up any stray markdown that might have leaked through
-    return response.text.replace(/[*#_~`]/g, '').trim();
-  } catch (error: any) {
-    console.error(`AI call failed [${modelName}]:`, error);
-    if (error.message?.includes('Unsupported MIME type')) {
-      throw new Error("The AI model does not support this file format. Please upload a PDF.");
-    }
-    throw error;
   }
+
+  throw lastError || new Error("All AI Engines failed to respond.");
 }
 
 export const getAIInsights = async (data: ResumeData): Promise<string[]> => {
-  const prompt = `Analyze this resume data and provide 3 highly specific, professional plain-text suggestions. Do not use any special characters or markdown. Focus on missing sections or skill gaps for "${data.personalInfo.jobTitle}". Data: ${JSON.stringify(data)}`;
-  
-  const schema = {
-    type: Type.ARRAY,
-    items: { type: Type.STRING }
-  };
-
+  const prompt = `Analyze this resume data and provide 3 highly specific plain-text professional suggestions. Output as a JSON array of strings only. Data: ${JSON.stringify(data)}`;
   try {
-    const res = await callGemini([{ text: prompt }], true, schema);
+    const res = await callMultiAi(prompt, true);
     return JSON.parse(res);
   } catch (error) {
-    return ["Quantify your achievements with numbers.", "Add a certifications section.", "Refine your executive summary for keywords."];
+    return ["Quantify your achievements.", "Add a certifications section.", "Refine your executive summary."];
   }
 };
 
 export const suggestSectionContent = async (sectionTitle: string, jobTitle: string): Promise<string> => {
-  const prompt = `Write a professional 2-3 sentence paragraph for a resume section titled "${sectionTitle}" for a candidate seeking a "${jobTitle}" role. Use a high-impact tone. DO NOT USE MARKDOWN, BOLDING, OR ASTERISKS.`;
-  return await callGemini([{ text: prompt }]);
+  const prompt = `Write a professional 3-sentence paragraph for a resume section titled "${sectionTitle}" for a "${jobTitle}" role. Plain text only, no markdown.`;
+  return await callMultiAi(prompt);
 };
 
 export const optimizeExperienceDescription = async (text: string): Promise<string> => {
-  const prompt = `Rewrite the following work experience description using the STAR method. Use plain text bullet points (starting with -). DO NOT USE ASTERISKS OR BOLDING. Original text: ${text}`;
-  return await callGemini([{ text: prompt }]);
+  const prompt = `Rewrite this experience description using STAR method. Use plain text bullet points starting with - . No bolding. Text: ${text}`;
+  return await callMultiAi(prompt);
 };
 
-export const analyzeATS = async (resumeData: ResumeData | null, jobDescription: string, uploadedFile?: { data: string, mimeType: string }) => {
-  const promptParts: any[] = [];
-  
-  if (uploadedFile) {
-    promptParts.push({
-      inlineData: {
-        data: uploadedFile.data,
-        mimeType: uploadedFile.mimeType
-      }
-    });
-    promptParts.push({ text: `Analyze the provided resume file against this job description: ${jobDescription}. Identify specific deficiencies. Output JSON only.` });
-  } else {
-    promptParts.push({ text: `Analyze this resume JSON against this job description: ${jobDescription}. Resume Data: ${JSON.stringify(resumeData)}. Output JSON only.` });
-  }
-
-  const schema = {
-    type: Type.OBJECT,
-    properties: {
-      score: { type: Type.NUMBER },
-      matchAnalysis: { type: Type.STRING },
-      missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-      formattingIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
-      improvementSuggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-    },
-    required: ["score", "matchAnalysis", "missingKeywords", "formattingIssues", "improvementSuggestions"]
-  };
-
+/**
+ * Fixed analyzeATS signature to accept 3 arguments (including optional file) 
+ * to resolve the TypeScript error in ATSChecker.tsx.
+ */
+export const analyzeATS = async (
+  resumeData: ResumeData | null, 
+  jobDescription: string, 
+  file?: { name: string, data: string, mimeType: string }
+) => {
+  const prompt = `Analyze this resume against this job description. Resume: ${JSON.stringify(resumeData)}. JD: ${jobDescription}. Output a JSON with score (0-100), matchAnalysis (string), missingKeywords (array), formattingIssues (array), improvementSuggestions (array).`;
   try {
-    const res = await callGemini(promptParts, true, schema, 'gemini-3-pro-preview');
+    const res = await callMultiAi(prompt, true, undefined, file);
     return JSON.parse(res);
   } catch (error) {
-    console.error("ATS Analysis Failed", error);
     throw error;
   }
 };
 
 export const applyATSFixes = async (resumeData: ResumeData, jobDescription: string): Promise<ResumeData> => {
-  const prompt = `Rewrite the Summary and Experience descriptions in this JSON object to match the Job Description. DO NOT USE ANY MARKDOWN OR BOLDING IN THE TEXT FIELDS. 
-  Job Description: ${jobDescription}
-  Original Resume Data: ${JSON.stringify(resumeData)}`;
-
+  const prompt = `Rewrite the Summary and Experience in this JSON to match the Job Description. DO NOT USE MARKDOWN. Return updated JSON only. JD: ${jobDescription} Data: ${JSON.stringify(resumeData)}`;
   try {
-    const res = await callGemini([{ text: prompt }], true, undefined, 'gemini-3-pro-preview');
+    const res = await callMultiAi(prompt, true);
     return JSON.parse(res);
   } catch (error) {
-    console.error("AI Fixer Failed", error);
-    throw error;
+    return resumeData;
   }
 };
 
-export const generateLetter = async (resumeData: ResumeData, jobDescription: string, type: 'cover' | 'referral' | 'thank-you') => {
-  const prompt = `Generate a professional ${type} letter for ${resumeData.personalInfo.fullName}. Targeted Job Description: ${jobDescription}. USE PLAIN TEXT ONLY. NO BOLDING, NO ASTERISKS, NO HEADINGS.`;
-  return await callGemini([{ text: prompt }], false, undefined, 'gemini-3-pro-preview');
+export const generateLetter = async (resumeData: ResumeData, jobDescription: string, type: string) => {
+  const prompt = `Generate a professional ${type} letter for ${resumeData.personalInfo.fullName}. JD: ${jobDescription}. Background: ${JSON.stringify(resumeData.experience)}. Plain text only.`;
+  return await callMultiAi(prompt);
 };
 
 export const getAIAssistantResponse = async (query: string, history: any[]) => {
-  const sysInst = "You are the Career Forge AI. Provide professional career advice. USE PLAIN TEXT ONLY. Never use asterisks, hashes, or markdown formatting. No bolding. No headings. Just plain paragraphs.";
-  const promptParts = [
-    ...history.map(m => ({ text: m.text })),
-    { text: query }
-  ];
-  return await callGemini(promptParts, false, undefined, 'gemini-3-pro-preview', sysInst);
+  const prompt = `History: ${JSON.stringify(history)}. User Query: ${query}`;
+  return await callMultiAi(prompt);
 };
 
 export const generateProfessionalSummary = async (data: Partial<ResumeData>): Promise<string> => {
-  const prompt = `Generate a powerful 3-sentence professional summary. Candidate: ${data.personalInfo?.fullName}, Role: ${data.personalInfo?.jobTitle}. PLAIN TEXT ONLY. NO BOLDING. NO ASTERISKS.`;
-  return await callGemini([{ text: prompt }]);
+  const prompt = `Generate a powerful 3-sentence professional summary for ${data.personalInfo?.jobTitle}. Plain text only.`;
+  return await callMultiAi(prompt);
 };
 
 export const suggestSkills = async (jobTitle: string, currentSkills: string[]): Promise<string[]> => {
-  const prompt = `Suggest a list of 10 skills for a "${jobTitle}". Return as a simple comma-separated list of plain text. No markdown.`;
-  const res = await callGemini([{ text: prompt }]);
+  const prompt = `Suggest 10 skills for a "${jobTitle}". Return as a comma-separated list of plain text.`;
+  const res = await callMultiAi(prompt);
   return res.split(',').map(s => s.trim()).filter(s => s.length > 0);
 };
