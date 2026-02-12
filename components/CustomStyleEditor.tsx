@@ -51,7 +51,7 @@ const CustomStyleEditor: React.FC<CustomStyleEditorProps> = ({ data, onChange })
   return (
     <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-8 animate-in slide-in-from-left-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-black">Style Architect</h3>
+        <h3 className="text-xl font-black text-black">Style Architect</h3>
         <div className="flex gap-2">
            <label className="cursor-pointer bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
              Upload .forge
@@ -65,7 +65,7 @@ const CustomStyleEditor: React.FC<CustomStyleEditorProps> = ({ data, onChange })
 
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Primary Color</label>
+          <label className="text-[10px] font-black uppercase text-black tracking-widest">Primary Color</label>
           <input 
             type="color" 
             value={currentStyle.primaryColor} 
@@ -74,7 +74,7 @@ const CustomStyleEditor: React.FC<CustomStyleEditorProps> = ({ data, onChange })
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Accent Color</label>
+          <label className="text-[10px] font-black uppercase text-black tracking-widest">Accent Color</label>
           <input 
             type="color" 
             value={currentStyle.accentColor} 
@@ -83,11 +83,11 @@ const CustomStyleEditor: React.FC<CustomStyleEditorProps> = ({ data, onChange })
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Font Family</label>
+          <label className="text-[10px] font-black uppercase text-black tracking-widest">Font Family</label>
           <select 
             value={currentStyle.fontFamily}
             onChange={e => updateStyle('fontFamily', e.target.value as any)}
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-black font-medium"
           >
             <option value="sans">Sans Serif (Modern)</option>
             <option value="serif">Serif (Traditional)</option>
@@ -95,33 +95,33 @@ const CustomStyleEditor: React.FC<CustomStyleEditorProps> = ({ data, onChange })
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Base Font Size</label>
+          <label className="text-[10px] font-black uppercase text-black tracking-widest">Base Font Size</label>
           <input 
             type="text" 
             value={currentStyle.fontSize} 
             onChange={e => updateStyle('fontSize', e.target.value)}
             placeholder="14px"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-black font-medium"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Line Spacing</label>
+          <label className="text-[10px] font-black uppercase text-black tracking-widest">Line Spacing</label>
           <input 
             type="text" 
             value={currentStyle.spacing} 
             onChange={e => updateStyle('spacing', e.target.value)}
             placeholder="1.5"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-black font-medium"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Element Radius</label>
+          <label className="text-[10px] font-black uppercase text-black tracking-widest">Element Radius</label>
           <input 
             type="text" 
             value={currentStyle.borderRadius} 
             onChange={e => updateStyle('borderRadius', e.target.value)}
             placeholder="4px"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-black font-medium"
           />
         </div>
       </div>

@@ -38,6 +38,12 @@ export interface Project {
   technologies: string[];
 }
 
+export interface CustomSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
 export interface CustomStyle {
   primaryColor: string;
   accentColor: string;
@@ -57,6 +63,7 @@ export interface ResumeData {
   certifications: string[];
   achievements: string[];
   languages: string[];
+  customSections: CustomSection[];
   customStyle?: CustomStyle;
 }
 
@@ -64,5 +71,10 @@ export enum TemplateId {
   MODERN = 'modern',
   MINIMAL = 'minimal',
   CORPORATE = 'corporate',
+  NOIR = 'noir',
+  NEON = 'neon',
+  ROYAL = 'royal',
   CUSTOM = 'custom'
 }
+
+export type UITheme = 'onyx' | 'crystal' | 'forge';

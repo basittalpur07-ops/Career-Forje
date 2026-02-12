@@ -9,29 +9,30 @@ interface TemplateSwitcherProps {
 
 const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selected, onSelect }) => {
   const templates = [
-    { id: TemplateId.MODERN, name: 'Modern', desc: 'Sleek & Stylish' },
-    { id: TemplateId.MINIMAL, name: 'Minimal', desc: 'Clean & Simple' },
-    { id: TemplateId.CORPORATE, name: 'Corporate', desc: 'Classic & Reliable' },
-    { id: TemplateId.CUSTOM, name: 'Architect', desc: 'User Defined' },
+    { id: TemplateId.MODERN, name: 'Modern', desc: 'Sleek & Fluid', icon: '✨' },
+    { id: TemplateId.MINIMAL, name: 'Minimal', desc: 'Silent & Sharp', icon: '🌑' },
+    { id: TemplateId.CORPORATE, name: 'Corporate', desc: 'Bold & Traditional', icon: '💼' },
+    { id: TemplateId.NOIR, name: 'Noir', desc: 'Executive Dark', icon: '🎩' },
+    { id: TemplateId.NEON, name: 'Neon', desc: 'Cyber Tech', icon: '⚡' },
+    { id: TemplateId.ROYAL, name: 'Royal', desc: 'Elegant Serif', icon: '👑' },
+    { id: TemplateId.CUSTOM, name: 'Architect', desc: 'Fully Custom', icon: '🏗️' },
   ];
 
   return (
-    <div className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm mb-6 border border-slate-100 no-print overflow-x-auto">
+    <div className="w-full flex gap-3 p-2 bg-slate-50/50 backdrop-blur-md rounded-[2rem] border border-slate-200/50 no-print overflow-x-auto no-scrollbar scroll-smooth">
       {templates.map((t) => (
         <button
           key={t.id}
           onClick={() => onSelect(t.id)}
-          className={`flex-1 min-w-[140px] p-4 rounded-xl border-2 transition-all ${
+          className={`flex-shrink-0 flex flex-col items-center justify-center w-32 h-28 rounded-2xl border-2 transition-all duration-300 ${
             selected === t.id
-              ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-              : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200'
+              ? 'border-indigo-600 bg-white shadow-xl shadow-indigo-100/50 scale-105 z-10'
+              : 'border-transparent bg-transparent text-slate-400 hover:bg-white hover:text-slate-600'
           }`}
         >
-          <div className="font-bold flex items-center justify-center gap-2">
-            {t.id === TemplateId.CUSTOM && <span>🏗️</span>}
-            {t.name}
-          </div>
-          <div className="text-[10px] uppercase font-black opacity-40 tracking-widest mt-1">{t.desc}</div>
+          <span className="text-2xl mb-1">{t.icon}</span>
+          <span className="text-[11px] font-black uppercase tracking-widest">{t.name}</span>
+          <span className="text-[8px] opacity-40 font-bold uppercase tracking-tight mt-1">{t.desc}</span>
         </button>
       ))}
     </div>

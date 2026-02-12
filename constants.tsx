@@ -19,7 +19,8 @@ export const INITIAL_RESUME_DATA: ResumeData = {
   projects: [],
   certifications: [],
   achievements: [],
-  languages: []
+  languages: [],
+  customSections: []
 };
 
 export const SAMPLE_RESUME_DATA: ResumeData = {
@@ -44,16 +45,6 @@ export const SAMPLE_RESUME_DATA: ResumeData = {
       endDate: 'Present',
       current: true,
       description: 'Led a team of 15 engineers to rebuild the core checkout platform, resulting in a 25% increase in conversion rate.'
-    },
-    {
-      id: 'exp2',
-      company: 'StartUp Hub',
-      role: 'Full Stack Engineer',
-      location: 'Remote',
-      startDate: '2017-06',
-      endDate: '2019-12',
-      current: false,
-      description: 'Implemented microservices architecture using Node.js and Docker, reducing deployment time by 40%.'
     }
   ],
   education: [
@@ -66,17 +57,16 @@ export const SAMPLE_RESUME_DATA: ResumeData = {
       graduationDate: '2016-05'
     }
   ],
-  skills: ['React', 'TypeScript', 'Node.js', 'AWS', 'Docker', 'GraphQL', 'System Design'],
-  projects: [
+  skills: ['React', 'TypeScript', 'Node.js', 'AWS', 'Docker'],
+  projects: [],
+  certifications: ['AWS Certified Solutions Architect'],
+  achievements: ['Won 1st place at Global Fintech Hackathon 2022'],
+  languages: ['English (Native)'],
+  customSections: [
     {
-      id: 'proj1',
-      name: 'CloudScale Dashboard',
-      description: 'A real-time monitoring dashboard for cloud infrastructure processing 1M+ events/second.',
-      link: 'github.com/janedoe/cloudscale',
-      technologies: ['React', 'D3.js', 'WebSockets']
+      id: 'cs1',
+      title: 'Volunteering',
+      content: 'Mentor at Code.org, teaching underprivileged youth the basics of web development.'
     }
-  ],
-  certifications: ['AWS Certified Solutions Architect', 'Professional Scrum Master'],
-  achievements: ['Won 1st place at Global Fintech Hackathon 2022', 'Published 3 articles on High Performance Web'],
-  languages: ['English (Native)', 'Spanish (Professional)']
+  ]
 };
