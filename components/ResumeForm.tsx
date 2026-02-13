@@ -16,12 +16,17 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, onChange }) => {
 
   useEffect(() => {
     const fetchInsights = async () => {
+      // Prevent fetching if no job title or critical info to analyze
+      if (!data.personalInfo.jobTitle && data.experience.length === 0) return;
+      
       setIsInsightsLoading(true);
       try {
         const res = await getAIInsights(data);
-        setInsights(res);
+        // Ensure res is always an array before setting state
+        setInsights(Array.isArray(res) ? res : []);
       } catch (err) {
         console.error("Failed to fetch insights", err);
+        setInsights([]);
       } finally {
         setIsInsightsLoading(false);
       }
@@ -57,6 +62,8 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, onChange }) => {
     try {
       const suggestion = await suggestSectionContent(title, data.personalInfo.jobTitle);
       updateCustomSection(id, 'content', suggestion);
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsOptimizing(null);
     }
@@ -73,11 +80,14 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, onChange }) => {
           {isInsightsLoading ? (
             <div className="h-4 w-1/2 bg-indigo-500/10 rounded animate-pulse"></div>
           ) : (
-            insights.slice(0, 2).map((insight, i) => (
+            (Array.isArray(insights) ? insights : []).slice(0, 2).map((insight, i) => (
               <p key={i} className="text-xs text-black flex gap-2 font-medium">
                 <span className="text-indigo-500 font-bold">•</span> {insight}
               </p>
             ))
+          )}
+          {!isInsightsLoading && (!insights || insights.length === 0) && (
+             <p className="text-[10px] text-slate-400 italic">Add your job title to get AI insights.</p>
           )}
         </div>
       </div>
@@ -142,9 +152,12 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, onChange }) => {
                    <label className="text-[10px] font-black uppercase text-black tracking-widest">Bio / Summary</label>
                    <button onClick={async () => {
                      setIsOptimizing('summary');
-                     const summary = await generateProfessionalSummary(data);
-                     onChange({...data, summary});
-                     setIsOptimizing(null);
+                     try {
+                       const summary = await generateProfessionalSummary(data);
+                       onChange({...data, summary});
+                     } finally {
+                       setIsOptimizing(null);
+                     }
                    }} className="text-[10px] font-black text-indigo-500 uppercase">✨ Suggest</button>
                 </div>
                 <textarea 
@@ -175,9 +188,12 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, onChange }) => {
                   <button 
                     onClick={async () => {
                       setIsOptimizing(exp.id);
-                      const res = await optimizeExperienceDescription(exp.description);
-                      onChange({...data, experience: data.experience.map(e => e.id === exp.id ? {...e, description: res} : e)});
-                      setIsOptimizing(null);
+                      try {
+                        const res = await optimizeExperienceDescription(exp.description);
+                        onChange({...data, experience: data.experience.map(e => e.id === exp.id ? {...e, description: res} : e)});
+                      } finally {
+                        setIsOptimizing(null);
+                      }
                     }}
                     className="mt-4 text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2"
                   >
@@ -244,9 +260,12 @@ const ResumeForm: React.FC<ResumeFormProps> = ({ data, onChange }) => {
                 <button 
                   onClick={async () => {
                     setIsOptimizing('skills');
-                    const suggestions = await suggestSkills(data.personalInfo.jobTitle, data.skills);
-                    onChange({...data, skills: [...data.skills, ...suggestions]});
-                    setIsOptimizing(null);
+                    try {
+                      const suggestions = await suggestSkills(data.personalInfo.jobTitle, data.skills);
+                      onChange({...data, skills: [...data.skills, ...suggestions]});
+                    } finally {
+                      setIsOptimizing(null);
+                    }
                   }}
                   className="bg-indigo-600 text-white px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100"
                 >

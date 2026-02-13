@@ -37,6 +37,13 @@ const App: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
+  // Re-initialize Lucide icons whenever the view or subView changes
+  useEffect(() => {
+    if (typeof (window as any).lucide !== 'undefined') {
+      (window as any).lucide.createIcons();
+    }
+  }, [view, subView, isAuthOpen]);
+
   useEffect(() => {
     const unsubscribe = authService.onAuthState((u) => {
       setUser(u);
