@@ -9,30 +9,28 @@ interface TemplateSwitcherProps {
 
 const TemplateSwitcher: React.FC<TemplateSwitcherProps> = ({ selected, onSelect }) => {
   const templates = [
-    { id: TemplateId.MODERN, name: 'Modern', desc: 'Sleek & Fluid', icon: '✨' },
-    { id: TemplateId.MINIMAL, name: 'Minimal', desc: 'Silent & Sharp', icon: '🌑' },
-    { id: TemplateId.CORPORATE, name: 'Corporate', desc: 'Bold & Traditional', icon: '💼' },
-    { id: TemplateId.NOIR, name: 'Noir', desc: 'Executive Dark', icon: '🎩' },
-    { id: TemplateId.NEON, name: 'Neon', desc: 'Cyber Tech', icon: '⚡' },
-    { id: TemplateId.ROYAL, name: 'Royal', desc: 'Elegant Serif', icon: '👑' },
-    { id: TemplateId.CUSTOM, name: 'Architect', desc: 'Fully Custom', icon: '🏗️' },
+    { id: TemplateId.MODERN, name: 'Modern', icon: 'layers' },
+    { id: TemplateId.MINIMAL, name: 'Minimal', icon: 'minus' },
+    { id: TemplateId.CORPORATE, name: 'Corporate', icon: 'briefcase' },
+    { id: TemplateId.NOIR, name: 'Noir', icon: 'moon' },
+    { id: TemplateId.NEON, name: 'Neon', icon: 'zap' },
+    { id: TemplateId.ROYAL, name: 'Royal', icon: 'crown' },
   ];
 
   return (
-    <div className="w-full flex gap-3 p-2 bg-slate-50/50 backdrop-blur-md rounded-[2rem] border border-slate-200/50 no-print overflow-x-auto no-scrollbar scroll-smooth">
+    <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
       {templates.map((t) => (
         <button
           key={t.id}
           onClick={() => onSelect(t.id)}
-          className={`flex-shrink-0 flex flex-col items-center justify-center w-32 h-28 rounded-2xl border-2 transition-all duration-300 ${
+          className={`flex-shrink-0 px-4 py-2 rounded-full border text-xs font-bold transition-all flex items-center gap-2 ${
             selected === t.id
-              ? 'border-indigo-600 bg-white shadow-xl shadow-indigo-100/50 scale-105 z-10'
-              : 'border-transparent bg-transparent text-slate-400 hover:bg-white hover:text-slate-600'
+              ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400 dark:hover:border-slate-500'
           }`}
         >
-          <span className="text-2xl mb-1">{t.icon}</span>
-          <span className="text-[11px] font-black uppercase tracking-widest">{t.name}</span>
-          <span className="text-[8px] opacity-40 font-bold uppercase tracking-tight mt-1">{t.desc}</span>
+          <i data-lucide={t.icon} className="w-3.5 h-3.5"></i>
+          <span>{t.name}</span>
         </button>
       ))}
     </div>

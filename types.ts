@@ -77,4 +77,4 @@ export enum TemplateId {
   CUSTOM = 'custom'
 }
 
-export type UITheme = 'onyx' | 'crystal' | 'forge';
+export type UITheme = 'light' | 'dark';

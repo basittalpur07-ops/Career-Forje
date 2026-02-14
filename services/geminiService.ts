@@ -2,21 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ResumeData } from "../types";
 
-if (typeof (window as any).process === 'undefined') {
-  (window as any).process = { env: {} };
-}
-
-const viteEnv = (import.meta as any).env || {};
-if (viteEnv.VITE_API_KEY) (process.env as any).API_KEY = viteEnv.VITE_API_KEY;
-if (viteEnv.VITE_GEMINI_KEY_2) (process.env as any).GEMINI_KEY_2 = viteEnv.VITE_GEMINI_KEY_2;
-if (viteEnv.VITE_GROQ_KEY_1) (process.env as any).GROQ_KEY_1 = viteEnv.VITE_GROQ_KEY_1;
-if (viteEnv.VITE_GROQ_KEY_2) (process.env as any).GROQ_KEY_2 = viteEnv.VITE_GROQ_KEY_2;
-if (viteEnv.VITE_OPENROUTER_KEY_1) (process.env as any).OPENROUTER_KEY_1 = viteEnv.VITE_OPENROUTER_KEY_1;
-if (viteEnv.VITE_OPENROUTER_KEY_2) (process.env as any).OPENROUTER_KEY_2 = viteEnv.VITE_OPENROUTER_KEY_2;
-
-/**
- * Helper to clean JSON strings from AI response (removes markdown backticks)
- */
 const cleanJsonResponse = (text: string): string => {
   return text
     .replace(/```json/g, '')
@@ -27,104 +12,107 @@ const cleanJsonResponse = (text: string): string => {
 async function callMultiAi(
   prompt: string, 
   isJson: boolean = false, 
-  systemInstruction: string = "You are a professional career assistant. Provide plain text responses without any markdown, asterisks, or headings.",
-  file?: { data: string, mimeType: string }
-): Promise<string> {
+  systemInstruction: string = "You are a professional career assistant.",
+  useSearch: boolean = false
+): Promise<any> {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key missing");
+
+  // Upgrade to gemini-3-pro-image-preview for high-quality real-time information with googleSearch tool
+  const modelName = useSearch ? 'gemini-3-pro-image-preview' : 'gemini-3-flash-preview';
   
-  // Note: Using Flash for general tasks to avoid 429 quota limits of Pro
-  const engines = [
-    { 
-      name: 'Gemini Primary', 
-      provider: 'gemini', 
-      key: process.env.API_KEY, 
-      model: isJson ? 'gemini-3-flash-preview' : 'gemini-3-flash-preview' 
-    },
-    { 
-      name: 'Gemini Secondary', 
-      provider: 'gemini', 
-      key: (process.env as any).GEMINI_KEY_2, 
-      model: 'gemini-3-flash-preview' 
-    },
-    { 
-      name: 'Groq Primary', 
-      provider: 'groq', 
-      key: (process.env as any).GROQ_KEY_1, 
-      model: 'llama-3.3-70b-versatile' 
-    },
-    { 
-      name: 'OpenRouter Primary', 
-      provider: 'openrouter', 
-      key: (process.env as any).OPENROUTER_KEY_1, 
-      model: 'google/gemini-2.0-flash-exp:free' 
-    },
-  ];
+  const ai = new GoogleGenAI({ apiKey });
+  
+  const config: any = {
+    systemInstruction,
+    // Disable responseMimeType when using search tool to avoid potential Rpc errors
+    ...(isJson && !useSearch ? { responseMimeType: 'application/json' } : {}),
+  };
 
-  let lastError = null;
-
-  for (const engine of engines) {
-    if (!engine.key) continue;
-
-    try {
-      if (engine.provider === 'gemini') {
-        const ai = new GoogleGenAI({ apiKey: engine.key });
-        const contents: any = file ? 
-          { parts: [{ inlineData: { data: file.data, mimeType: file.mimeType } }, { text: prompt }] } : 
-          prompt;
-
-        const response = await ai.models.generateContent({
-          model: engine.model,
-          contents: contents,
-          config: {
-            systemInstruction: systemInstruction,
-            responseMimeType: isJson ? 'application/json' : 'text/plain',
-          }
-        });
-        
-        if (response.text) {
-          const cleaned = isJson ? cleanJsonResponse(response.text) : response.text.replace(/[*#_~`]/g, '').trim();
-          return cleaned;
-        }
-      } 
-      else {
-        const url = engine.provider === 'groq' 
-          ? 'https://api.groq.com/openai/v1/chat/completions' 
-          : 'https://openrouter.ai/api/v1/chat/completions';
-          
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${engine.key}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: engine.model,
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: prompt }
-            ],
-            ...(isJson ? { response_format: { type: 'json_object' } } : {})
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const content = data.choices?.[0]?.message?.content;
-          if (content) {
-            return isJson ? cleanJsonResponse(content) : content.replace(/[*#_~`]/g, '').trim();
-          }
-        }
-      }
-    } catch (e) {
-      console.warn(`[Career Forge AI] ${engine.name} fail/quota:`, e);
-      lastError = e;
-    }
+  if (useSearch) {
+    config.tools = [{ googleSearch: {} }];
   }
 
-  throw lastError || new Error("Quota exceeded or Connection failed.");
+  try {
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: prompt,
+      config
+    });
+
+    if (useSearch) {
+      return {
+        text: response.text,
+        grounding: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
+      };
+    }
+
+    return isJson ? cleanJsonResponse(response.text) : response.text.replace(/[*#_~`]/g, '').trim();
+  } catch (e) {
+    console.error("AI Call failed", e);
+    throw e;
+  }
 }
 
+export const searchJobs = async (data: ResumeData, locationInfo: { coords?: { lat: number, lng: number }, text?: string }) => {
+  const title = data.personalInfo.jobTitle || "Professional";
+  const skills = data.skills.slice(0, 5).join(", ");
+  
+  const locationContext = locationInfo.coords 
+    ? `near coordinates ${locationInfo.coords.lat}, ${locationInfo.coords.lng}` 
+    : `in ${locationInfo.text || data.personalInfo.location || "Remote"}`;
+
+  const prompt = `FIND REAL CURRENT JOBS: Use Google Search to find 5 ACTUAL and RECENT job openings for a "${title}" ${locationContext}. 
+  Focus on the absolute NEAREST real-world opportunities posted on LinkedIn, Indeed, Glassdoor, or company websites.
+  
+  Prioritize roles matching: ${skills}.
+  
+  MANDATORY: Return ONLY a valid JSON object. Do not include any other text. 
+  
+  JSON Structure:
+  {
+    "jobs": [
+      {
+        "title": "exact job title found in search",
+        "company": "real company name",
+        "location": "specific area/neighborhood",
+        "distance": "estimated distance from user if known",
+        "matchScore": 0-100,
+        "reasoning": "why this matches based on profile",
+        "postedDate": "real posting date info"
+      }
+    ]
+  }
+  
+  I will extract the URLs from your grounding chunks. Ensure you ground each job to a real URL.`;
+
+  try {
+    const res = await callMultiAi(prompt, true, "You are a specialized Recruitment Scout. You MUST find REAL, existing job postings using Google Search. Do not hallucinate links.", true);
+    
+    const jsonStr = cleanJsonResponse(res.text);
+    const parsedData = JSON.parse(jsonStr);
+    
+    const jobs = (parsedData.jobs || []).map((job: any, index: number) => {
+      // Find a matching grounding chunk. We try to be more intelligent than just index matching.
+      // Filter for chunks that have a web URI.
+      const groundingLinks = res.grounding
+        .filter((chunk: any) => chunk.web?.uri)
+        .map((chunk: any) => chunk.web.uri);
+      
+      // Fallback to index or first available link
+      const url = groundingLinks[index] || groundingLinks[0] || "#";
+      return { ...job, url };
+    });
+
+    return jobs;
+  } catch (error) {
+    console.error("Job search failed", error);
+    return [];
+  }
+};
+
 export const getAIInsights = async (data: ResumeData): Promise<string[]> => {
-  const prompt = `Analyze this resume and provide exactly 3 plain-text professional improvement tips. Output as a JSON array of strings only. Example: ["Tip 1", "Tip 2", "Tip 3"]. Data: ${JSON.stringify(data)}`;
+  const prompt = `Analyze this resume and provide exactly 3 plain-text professional improvement tips. Output as a JSON array of strings only. Data: ${JSON.stringify(data)}`;
   try {
     const res = await callMultiAi(prompt, true, "Expert Resume Coach. Return JSON array only.");
     const parsed = JSON.parse(res);
@@ -139,7 +127,7 @@ export const suggestSectionContent = async (sectionTitle: string, jobTitle: stri
   try {
     return await callMultiAi(prompt);
   } catch (e) {
-    return `Highly experienced in ${sectionTitle} within the ${jobTitle} domain. Focused on delivering high-quality results and operational excellence.`;
+    return `Highly experienced in ${sectionTitle} within the ${jobTitle} domain.`;
   }
 };
 
@@ -155,8 +143,23 @@ export const optimizeExperienceDescription = async (text: string): Promise<strin
 export const analyzeATS = async (resumeData: ResumeData | null, jobDescription: string, file?: { name: string, data: string, mimeType: string }) => {
   const prompt = `Analyze resume against JD. Resume: ${JSON.stringify(resumeData)}. JD: ${jobDescription}. Return JSON with: score (0-100), matchAnalysis, missingKeywords, formattingIssues, improvementSuggestions.`;
   try {
-    const res = await callMultiAi(prompt, true, "Expert ATS Analyst. Return valid JSON only.", file);
-    return JSON.parse(res);
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) throw new Error("API Key missing");
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const contents: any = file ? 
+      { parts: [{ inlineData: { data: file.data, mimeType: file.mimeType } }, { text: prompt }] } : 
+      prompt;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents,
+      config: {
+        systemInstruction: "Expert ATS Analyst. Return valid JSON only.",
+        responseMimeType: 'application/json',
+      }
+    });
+    return JSON.parse(cleanJsonResponse(response.text));
   } catch (error) {
     throw error;
   }
@@ -173,11 +176,11 @@ export const applyATSFixes = async (resumeData: ResumeData, jobDescription: stri
 };
 
 export const generateLetter = async (resumeData: ResumeData, jobDescription: string, type: string) => {
-  const prompt = `Generate a professional ${type} letter for ${resumeData.personalInfo.fullName}. JD: ${jobDescription}. Experience: ${JSON.stringify(resumeData.experience)}. Plain text only.`;
+  const prompt = `Generate a professional ${type} letter for ${resumeData.personalInfo.fullName}. JD: ${jobDescription}. Plain text only.`;
   try {
     return await callMultiAi(prompt);
   } catch (e) {
-    return "Failed to generate letter. Please check your connection.";
+    return "Failed to generate letter.";
   }
 };
 
@@ -186,7 +189,7 @@ export const getAIAssistantResponse = async (query: string, history: any[]) => {
   try {
     return await callMultiAi(prompt);
   } catch (e) {
-    return "I'm currently resting. Please try again in a moment.";
+    return "I'm currently resting.";
   }
 };
 
@@ -195,7 +198,7 @@ export const generateProfessionalSummary = async (data: Partial<ResumeData>): Pr
   try {
     return await callMultiAi(prompt);
   } catch (e) {
-    return "Experienced professional with a proven track record of success.";
+    return "Experienced professional with a proven track record.";
   }
 };
 
@@ -203,8 +206,8 @@ export const suggestSkills = async (jobTitle: string, currentSkills: string[]): 
   const prompt = `Suggest 10 skills for a "${jobTitle}". Return as a comma-separated list of plain text only.`;
   try {
     const res = await callMultiAi(prompt);
-    return res.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    return res.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
   } catch (e) {
-    return ["Communication", "Leadership", "Problem Solving"];
+    return ["Communication", "Leadership"];
   }
 };

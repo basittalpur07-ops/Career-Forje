@@ -29,7 +29,8 @@ const LetterGenerator: React.FC<LetterGeneratorProps> = ({ data, letter, onLette
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-xl">
+      <div className={`bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-xl relative transition-all ${isLoading ? 'ai-thinking-active' : ''}`}>
+        {isLoading && <div className="ai-scan-line"></div>}
         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">Letter Architect</h3>
         <div className="space-y-6">
           <div className="flex gap-2 p-1 bg-slate-50 rounded-2xl border border-slate-100">
